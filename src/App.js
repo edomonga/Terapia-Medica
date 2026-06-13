@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import domande, { argomenti } from './domande';
 
-// ─── CONFIG ────────────────────────────────────────────────────────────────
+// --- CONFIG ----------------------------------------------------------------
 // Utenti autorizzati: aggiungi qui username e password dei tuoi colleghi
 const UTENTI = {
   'edoardo':  'medicina2025',
-  'enrica':  'acuradienricapiazza'
-  'eleonora':  'cardiologia2027'
+  'enrica':    'pappagramma',
+  'eleonora':   'cardiologia2027',
+  'chiara':     'tettedibabe',
+  'nico':     'grover',
   // aggiungi altri: 'nomeutente': 'password'
 };
 
@@ -17,7 +19,7 @@ const STORAGE_KEY = 'tm_session_v4';
 // In locale metti una file .env con REACT_APP_ANTHROPIC_KEY=sk-ant-...
 const API_KEY = process.env.REACT_APP_ANTHROPIC_KEY || '';
 
-// ─── DESIGN TOKENS ─────────────────────────────────────────────────────────
+// --- DESIGN TOKENS ---------------------------------------------------------
 const C = {
   paper:    '#FAFAF8',
   white:    '#FFFFFF',
@@ -46,7 +48,7 @@ const F = {
   mono:  "'IBM Plex Mono', monospace",
 };
 
-// ─── HELPERS ───────────────────────────────────────────────────────────────
+// --- HELPERS ---------------------------------------------------------------
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
 function loadSession() {
@@ -120,7 +122,7 @@ Genera ${n} domande nuove e diverse su questo argomento.`,
   }));
 }
 
-// ─── VOTE CONFIG ───────────────────────────────────────────────────────────
+// --- VOTE CONFIG -----------------------------------------------------------
 const VOTE = {
   OTTIMO:        { bg: C.greenBg,  rule: C.greenRule,  text: C.green,  label: 'Ottimo',        score: 4 },
   BUONO:         { bg: C.slateBg,  rule: C.slateRule,  text: C.slate,  label: 'Buono',         score: 3 },
@@ -128,7 +130,7 @@ const VOTE = {
   INSUFFICIENTE: { bg: C.redLight, rule: C.redRule,    text: C.red,    label: 'Insufficiente', score: 0 },
 };
 
-// ─── PRIMITIVES ────────────────────────────────────────────────────────────
+// --- PRIMITIVES ------------------------------------------------------------
 const Rule = ({ color = C.rule, my = 0 }) => (
   <div style={{ height: 1, backgroundColor: color, margin: `${my}px 0` }} />
 );
@@ -226,7 +228,7 @@ const Masthead = ({ nome, onMenu, onLogout, extra }) => (
   </div>
 );
 
-// ─── LOGIN SCREEN ──────────────────────────────────────────────────────────
+// --- LOGIN SCREEN ----------------------------------------------------------
 function LoginScreen({ onLogin }) {
   const [username, setUsername] = useState('');
   const [pwd, setPwd] = useState('');
@@ -279,7 +281,7 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// ─── SETUP SCREEN ──────────────────────────────────────────────────────────
+// --- SETUP SCREEN ----------------------------------------------------------
 function SetupScreen({ username, onStart, onLogout }) {
   const [mode, setMode] = useState('argomento');
   const [selectedArgs, setSelectedArgs] = useState([]);
@@ -402,7 +404,7 @@ function SetupScreen({ username, onStart, onLogout }) {
   );
 }
 
-// ─── QUIZ SCREEN ────────────────────────────────────────────────────────────
+// --- QUIZ SCREEN ------------------------------------------------------------
 function QuizScreen({ pool: initialPool, isExam, argomentiScelti, username, onEnd, onMenu }) {
   // Keep real questions first, then append generated ones
   const [realDone, setRealDone] = useState(false);
@@ -591,7 +593,7 @@ function QuizScreen({ pool: initialPool, isExam, argomentiScelti, username, onEn
   );
 }
 
-// ─── RESULTS SCREEN ────────────────────────────────────────────────────────
+// --- RESULTS SCREEN --------------------------------------------------------
 function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
   const [review, setReview] = useState(false);
   const nomeDisplay = username.charAt(0).toUpperCase() + username.slice(1);
@@ -680,7 +682,7 @@ function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
   );
 }
 
-// ─── ROOT ──────────────────────────────────────────────────────────────────
+// --- ROOT ------------------------------------------------------------------
 export default function App() {
   const [username, setUsername] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.username || null; }
