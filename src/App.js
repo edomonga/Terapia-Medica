@@ -8,6 +8,7 @@ const UTENTI = {
   'eleonora':  'cardiologia2027',
   'niccolo':    'gintonic',
   'chiaram':    'babe',
+  'veronica':    'sonoscarsaapadel'
   // aggiungi altri: 'nomeutente': 'password'
 };
 
