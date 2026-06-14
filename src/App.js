@@ -4,11 +4,10 @@ import domande, { argomenti } from './domande';
 // --- CONFIG ----------------------------------------------------------------
 const UTENTI = {
   'edoardo': 'medicina2025',
-  'enrica':   'pappagramma',
-  'niccolo':  'gintonic',
-  'martina':    'cannolosiciliano',
-  'veronica':    'sonoscarsaapadel',
-  'eleonora':  'cardiologia2027'
+  'marco':   'medicina2025',
+  'giulia':  'medicina2025',
+  'sara':    'medicina2025',
+  'luca':    'medicina2025',
   // aggiungi altri: 'nomeutente': 'password'
 };
 
