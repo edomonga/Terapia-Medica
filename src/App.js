@@ -4,12 +4,10 @@ import domande, { argomenti } from './domande';
 // --- CONFIG ----------------------------------------------------------------
 const UTENTI = {
   'edoardo': 'medicina2025',
-  'enrica':   'pappagramma',
-  'eleonora':  'cardiologia2027',
-  'niccolo':    'gintonic',
-  'chiaram':    'babe',
-  'veronica':    'sonoscarsaapadel'
-  'martina':  'cannolosiciliano'
+  'marco':   'medicina2025',
+  'giulia':  'medicina2025',
+  'sara':    'medicina2025',
+  'luca':    'medicina2025',
   // aggiungi altri: 'nomeutente': 'password'
 };
 
@@ -95,21 +93,7 @@ Formato: {"voto":"OTTIMO"|"BUONO"|"SUFFICIENTE"|"INSUFFICIENTE","punteggio":<0-1
   return JSON.parse(text.replace(/```json|```/g,'').trim());
 }
 
-async function generaDomande(argomento, esistenti, n=5) {
-  const esempi = esistenti.slice(0,4).map(d=>`- ${d.domanda}`).join('\n');
-  const text = await callClaude(
-    `Sei un professore di Terapia Medica all'UNISR. Genera nuove domande d'esame a risposta breve (max 2 righe) sulla dispensa "Terapia Medica" di Enrica Piazza.
-Rispondi SOLO con array JSON valido, nessun testo fuori.
-Formato: [{"domanda":"<testo>","risposta":"<risposta max 2 righe>"}]`,
-    `Argomento: ${argomento}\nDomande già presenti (non ripetere):\n${esempi}\nGenera ${n} domande nuove.`,
-    1500
-  );
-  const arr = JSON.parse(text.replace(/```json|```/g,'').trim());
-  return arr.map((item,i) => ({
-    id: 9000 + Math.floor(Math.random()*9000) + i,
-    argomento, domanda:item.domanda, risposta:item.risposta, generata:true,
-  }));
-}
+// Generazione AI rimossa — domande pre-generate dalla dispensa Piazza
 
 // --- PRIMITIVES ------------------------------------------------------------
 const Rule = ({ color=C.rule, my=0 }) => <div style={{ height:1, backgroundColor:color, margin:`${my}px 0` }} />;
@@ -334,7 +318,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
   const [mode, setMode] = useState('argomento');
   const [selectedArgs, setSelectedArgs] = useState([]);
   const [numQ, setNumQ] = useState(10);
-  const [aiEnabled, setAiEnabled] = useState(true);
+  // AI generation removed — using pre-generated questions from dispensa
 
   const toggleArg = a => setSelectedArgs(p => p.includes(a) ? p.filter(x=>x!==a) : [...p,a]);
   const allSel = selectedArgs.length === argomenti.length;
@@ -348,7 +332,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
     let pool;
     if (mode==='esame') pool = shuffle(domande).slice(0, EXAM_N);
     else pool = shuffle(realPool).slice(0, Math.min(numQ, maxQ));
-    onStart({ pool, isExam:mode==='esame', argomentiScelti:mode==='argomento'?selectedArgs:argomenti, aiEnabled });
+    onStart({ pool, isExam:mode==='esame', argomentiScelti:mode==='argomento'?selectedArgs:argomenti });
   };
 
   return (
@@ -445,14 +429,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
           </div>
         )}
 
-        {/* AI Toggle */}
-        {mode !== 'esame' && (
-          <div style={{ marginBottom:32 }}>
-            <Label>Domande generate dall'AI</Label>
-            <Toggle on={aiEnabled} onToggle={()=>setAiEnabled(v=>!v)}
-              label={aiEnabled ? 'Attive — generate automaticamente quando finiscono le reali' : 'Disattive — solo domande dalla dispensa'} />
-          </div>
-        )}
+        {/* AI generation removed — questions pre-loaded from dispensa Piazza */}
 
         <Rule my={0} />
         <div style={{ paddingTop:28 }}>
@@ -466,13 +443,11 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
 }
 
 // --- QUIZ ------------------------------------------------------------------
-function QuizScreen({ pool:initialPool, isExam, argomentiScelti, aiEnabled, username, onEnd, onMenu }) {
-  const [pool, setPool] = useState(initialPool); // real questions first, shuffled
+function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd, onMenu }) {
+  const [pool, setPool] = useState(initialPool);
   const [current, setCurrent] = useState(0);
   const [risposta, setRisposta] = useState('');
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [genMsg, setGenMsg] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [err, setErr] = useState('');
   const [showRef, setShowRef] = useState(false);
@@ -483,21 +458,7 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, aiEnabled, user
   const pct = pool.length > 0 ? (current / pool.length) * 100 : 0;
   const nomeDisplay = cap(username);
 
-  // Auto-generate when near end of real questions (only if aiEnabled)
-  useEffect(() => {
-    if (!aiEnabled || isExam || generating) return;
-    const remaining = pool.slice(current).filter(d => !d.generata);
-    if (remaining.length <= 2 && pool.filter(d=>!d.generata).length > 0) {
-      setGenerating(true);
-      setGenMsg('Generazione nuove domande...');
-      const arg = argomentiScelti[Math.floor(Math.random() * argomentiScelti.length)];
-      const esistenti = domande.filter(d => d.argomento === arg);
-      generaDomande(arg, esistenti, 6)
-        .then(nuove => setPool(p => [...p, ...nuove]))
-        .catch(() => {})
-        .finally(() => { setGenerating(false); setGenMsg(''); });
-    }
-  }, [current, pool, isExam, aiEnabled, generating, argomentiScelti]);
+  // No AI generation — all questions pre-loaded from dispensa Piazza
 
   const handleSubmit = async () => {
     setErr(''); setLoading(true); setFeedback(null);
@@ -533,7 +494,7 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, aiEnabled, user
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
           {isExam && <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:C.red }}>Esame</span>}
           <span style={{ fontFamily:F.mono, fontSize:12, color:C.ink4 }}>{current+1} / {pool.length}</span>
-          {genMsg && <span style={{ fontFamily:F.mono, fontSize:10, color:C.ink4 }}>{genMsg}</span>}
+
         </div>
       }/>
       <div style={{ height:2, background:C.rule }}>
@@ -545,7 +506,7 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, aiEnabled, user
         <div style={{ background:C.white, border:`1px solid ${C.rule}`, borderRadius:4, padding:'30px 34px', marginBottom:16 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
             <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:C.red }}>{q.argomento}</span>
-            {q.generata && <span style={{ fontFamily:F.mono, fontSize:9, color:C.ink4, borderLeft:`1px solid ${C.rule}`, paddingLeft:10 }}>AI</span>}
+
             <span style={{ fontFamily:F.mono, fontSize:9, color:C.ink4, marginLeft:'auto' }}>#{q.id}</span>
           </div>
 
@@ -670,7 +631,7 @@ function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
               <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:8 }}>
                 <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.08em', textTransform:'uppercase', color:vv.text }}>{vv.label} - {r.fb?.punteggio}/10</span>
                 <span style={{ fontFamily:F.mono, fontSize:10, color:C.ink4 }}>{r.q.argomento}</span>
-                {r.q.generata && <span style={{ fontFamily:F.mono, fontSize:9, color:C.ink4 }}>- AI</span>}
+
               </div>
               <p style={{ fontFamily:F.serif, fontSize:15, fontWeight:600, color:C.ink, marginBottom:10, lineHeight:1.4 }}>{r.q.domanda}</p>
               <div style={{ fontSize:13, color:C.ink3, background:C.paper, border:`1px solid ${C.rule}`, borderRadius:2, padding:'7px 11px', marginBottom:8 }}>
