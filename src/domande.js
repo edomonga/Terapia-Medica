@@ -764,7 +764,7 @@ const domande = [
   { id: 674, argomento: "GERD e H. pylori", domanda: "Perché indagare un paziente con MRGE?", risposta: "Per sintomi d'allarme, mancata risposta ai PPI dopo 4-8 settimane o sintomi extraesofagei." },
   { id: 675, argomento: "GERD e H. pylori", domanda: "Principi attivi del Pylera e posologia.", risposta: "Bismuto, tetraciclina e metronidazolo (3 capsule x4 volte/die ai pasti) + PPI bid, per 10 giorni." },
   { id: 676, argomento: "GERD e H. pylori", domanda: "Antigene fecale H. pylori positivo in paziente sano: servono altri test?", risposta: "No: l'antigene fecale positivo è sufficiente; si procede all'eradicazione." },
-  { id: 677, argomento: "GERD e H. pylori", domanda: "Quale farmaco anti-H. pylori ha maggior rischio di fototossicità?", risposta: "Levofloxacina (fluorochinolone)." },
+  { id: 677, argomento: "GERD e H. pylori", domanda: "Quale farmaco anti-H. pylori ha maggior rischio di fototossicità?", risposta: "Fluorochinoloni" },
   { id: 678, argomento: "GERD e H. pylori", domanda: "Chinolone usato nella terapia di H. pylori.", risposta: "Levofloxacina (regime di salvataggio)." },
   { id: 679, argomento: "GERD e H. pylori", domanda: "Ulcera peptica: causa più frequente.", risposta: "FANS (e Helicobacter pylori)." },
 
