@@ -344,7 +344,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
  
   const toggleArg = a => setSelectedArgs(p => p.includes(a) ? p.filter(x=>x!==a) : [...p,a]);
   const allSel = selectedArgs.length === argomenti.length;
-  const argFiltered = argomenti.filter(a => a.toLowerCase().includes(searchArg.toLowerCase()));
+ const argFiltered = argomenti.filter(a => a && a.toLowerCase().includes(searchArg.toLowerCase()));
   const realPool = mode==='argomento' ? domande.filter(d=>selectedArgs.includes(d.argomento)) : domande;
   const maxQ = realPool.length;
   const canStart = mode==='esame' || mode==='random' || (mode==='argomento' && selectedArgs.length>0);
