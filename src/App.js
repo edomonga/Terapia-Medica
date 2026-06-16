@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import domande, { argomenti } from './domande';
 
 // --- CONFIG ----------------------------------------------------------------
@@ -8,15 +8,13 @@ const UTENTI = {
   'niccolo':  'gintonic',
   'eleonora':    'cardiologia2027',
   'martina':    'cannolosiciliano',
-  'veronica':  'sonoscarsaapadel' ,
+  'veronica':  'sonoscarsaapadel',
   'chiaram':  'babe',
-  // aggiungi altri: 'nomeutente': 'password'
 };
 
 const EXAM_N = 23;
 const SESSION_KEY  = 'tm_session_v5';
-const STATS_PREFIX = 'tm_stats_v5_'; // + username
-
+const STATS_PREFIX = 'tm_stats_v5_';
 const API_KEY = process.env.REACT_APP_ANTHROPIC_KEY || '';
 
 // --- DESIGN ----------------------------------------------------------------
@@ -43,8 +41,11 @@ const VOTE = {
 
 // --- HELPERS ---------------------------------------------------------------
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
-const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
- 
+const cap = s => (s && s.charAt(0).toUpperCase() + s.slice(1)) || '';
+
+// Argomenti puliti (no undefined/null)
+const argomentiPuliti = (argomenti || []).filter(a => typeof a === 'string' && a.length > 0);
+
 function loadStats(username) {
   try { return JSON.parse(localStorage.getItem(STATS_PREFIX + username)) || {}; }
   catch { return {}; }
@@ -65,7 +66,7 @@ function loadSession() {
 }
 function saveSession(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch {} }
 function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch {} }
- 
+
 async function callClaude(system, userMsg, maxTokens = 1000) {
   if (!API_KEY) throw new Error("API key non configurata. Contatta l'amministratore.");
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -82,18 +83,18 @@ async function callClaude(system, userMsg, maxTokens = 1000) {
   const data = await res.json();
   return data.content.map(b => b.text||'').join('');
 }
- 
+
 async function correggi(domanda, risposta, rispostaCorretta) {
   const text = await callClaude(
     `Sei un professore di Terapia Medica all'UNISR che corregge le risposte di studenti del 5° anno di medicina che si preparano all'esame.
 Il tuo obiettivo e' valutare se lo studente ha compreso i concetti clinici essenziali, non testare conoscenze molecolari o biochimiche avanzate.
- 
+
 CRITERI DI VALUTAZIONE:
 - OTTIMO: i concetti chiave clinici sono tutti presenti, anche se non espressi con le parole esatte della dispensa
 - BUONO: i concetti principali ci sono ma manca qualche dettaglio (es. un farmaco alternativo, una posologia secondaria)
 - SUFFICIENTE: l'idea generale e' corretta ma mancano elementi importanti
 - INSUFFICIENTE: la risposta e' errata, fuori tema o completamente vuota
- 
+
 REGOLE IMPORTANTI:
 - Non penalizzare per mancanza di dettagli molecolari o biochimici avanzati
 - Non penalizzare per sinonimi corretti o nomi commerciali al posto di quelli generici
@@ -101,21 +102,21 @@ REGOLE IMPORTANTI:
 - Il feedback deve essere incoraggiante e costruttivo: inizia sempre con quello che era giusto, poi aggiungi cosa mancava
 - Il feedback deve essere pratico e clinico, non teorico
 - Non chiedere mai piu' di quello che chiede la domanda
- 
+
 Rispondi SOLO con JSON valido, nessun testo fuori dal JSON, nessun markdown.
 Formato: {"voto":"OTTIMO"|"BUONO"|"SUFFICIENTE"|"INSUFFICIENTE","punteggio":<0-10>,"feedback":"<2-4 righe: prima il positivo, poi cosa aggiungere>","concetti":["<c1>","<c2>","<c3>"]}`,
     `DOMANDA: ${domanda}\nRISPOSTA STUDENTE: ${risposta||"(nessuna)"}\nRISPOSTA DISPENSA: ${rispostaCorretta}`
   );
   return JSON.parse(text.replace(/```json|```/g,'').trim());
 }
- 
+
 // --- PRIMITIVES ------------------------------------------------------------
 const Rule = ({ color=C.rule, my=0 }) => <div style={{ height:1, backgroundColor:color, margin:`${my}px 0` }} />;
 const RedRule = () => <div style={{ height:2, backgroundColor:C.red, width:48, marginBottom:24 }} />;
 const Label = ({ children }) => (
   <div style={{ fontFamily:F.mono, fontSize:10, fontWeight:500, letterSpacing:'.1em', textTransform:'uppercase', color:C.ink4, marginBottom:8 }}>{children}</div>
 );
- 
+
 const Btn = ({ children, onClick, variant='primary', disabled, full, style:extra={} }) => {
   const base = {
     fontFamily:F.sans, fontSize:13, fontWeight:600, letterSpacing:'.01em',
@@ -132,7 +133,7 @@ const Btn = ({ children, onClick, variant='primary', disabled, full, style:extra
   };
   return <button style={{ ...base, ...vs[variant] }} onClick={onClick} disabled={disabled}>{children}</button>;
 };
- 
+
 const FieldInput = ({ label, type='text', error, ...props }) => (
   <div style={{ marginBottom:20 }}>
     {label && <Label>{label}</Label>}
@@ -147,14 +148,14 @@ const FieldInput = ({ label, type='text', error, ...props }) => (
     />
   </div>
 );
- 
+
 const Spinner = () => (
   <svg width={14} height={14} viewBox="0 0 14 14" style={{ animation:'spin .7s linear infinite', flexShrink:0 }}>
     <circle cx={7} cy={7} r={5.5} stroke="currentColor" strokeOpacity={.25} strokeWidth={2} fill="none"/>
     <path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" fill="none"/>
   </svg>
 );
- 
+
 const Masthead = ({ nome, onMenu, onLogout, extra }) => (
   <div style={{ background:C.white, borderBottom:`1px solid ${C.rule}` }}>
     <div style={{ maxWidth:760, margin:'0 auto', padding:'0 24px' }}>
@@ -184,19 +185,19 @@ const Masthead = ({ nome, onMenu, onLogout, extra }) => (
     </div>
   </div>
 );
- 
+
 // --- LOGIN -----------------------------------------------------------------
 function LoginScreen({ onLogin }) {
   const [username, setUsername] = useState('');
   const [pwd, setPwd] = useState('');
   const [err, setErr] = useState('');
- 
+
   const attempt = () => {
-    const u = username.trim().toLowerCase();
+    const u = (username || '').trim().toLowerCase();
     if (UTENTI[u] && UTENTI[u] === pwd) onLogin(u);
     else { setErr('Username o password non corretti.'); setPwd(''); }
   };
- 
+
   return (
     <div style={{ minHeight:'100vh', background:C.paper, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
       <div style={{ width:'100%', maxWidth:360 }}>
@@ -218,27 +219,25 @@ function LoginScreen({ onLogin }) {
     </div>
   );
 }
- 
+
 // --- STATS SCREEN ----------------------------------------------------------
 function StatsScreen({ username, onBack, onRetry }) {
   const stats = loadStats(username);
   const nomeDisplay = cap(username);
-  const argsConDati = argomenti.filter(a => stats[a] && stats[a].total > 0);
+  const argsConDati = argomentiPuliti.filter(a => stats[a] && stats[a].total > 0);
   const totaleRisposte = argsConDati.reduce((s, a) => s + (stats[a].total||0), 0);
- 
-  // Calcola domande piu' sbagliate per argomento (insufficiente > 30%)
+
   const argSbagliati = argsConDati
     .filter(a => {
       const s = stats[a];
-      const pctInsuff = Math.round((s.INSUFFICIENTE||0) / s.total * 100);
-      return pctInsuff >= 30;
+      return s && s.total > 0 && Math.round((s.INSUFFICIENTE||0) / s.total * 100) >= 30;
     })
     .sort((a, b) => {
       const pA = Math.round((stats[a].INSUFFICIENTE||0) / stats[a].total * 100);
       const pB = Math.round((stats[b].INSUFFICIENTE||0) / stats[b].total * 100);
       return pB - pA;
     });
- 
+
   return (
     <div style={{ minHeight:'100vh', background:C.paper }}>
       <Masthead nome={nomeDisplay} onMenu={onBack} />
@@ -252,7 +251,7 @@ function StatsScreen({ username, onBack, onRetry }) {
         <p style={{ fontSize:14, color:C.ink3, marginBottom:36 }}>
           {totaleRisposte} risposte totali
         </p>
- 
+
         {totaleRisposte === 0 ? (
           <div style={{ background:C.white, border:`1px solid ${C.rule}`, borderRadius:4, padding:'40px 32px', textAlign:'center' }}>
             <p style={{ fontFamily:F.serif, fontSize:18, color:C.ink3 }}>Nessuna statistica ancora.</p>
@@ -261,7 +260,6 @@ function StatsScreen({ username, onBack, onRetry }) {
           </div>
         ) : (
           <>
-            {/* Global summary */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:1, background:C.rule, border:`1px solid ${C.rule}`, marginBottom:24 }}>
               {[
                 { label:'Ottimo',        val: argsConDati.reduce((s,a)=>s+(stats[a].OTTIMO||0),0),        ...VOTE.OTTIMO },
@@ -275,24 +273,21 @@ function StatsScreen({ username, onBack, onRetry }) {
                 </div>
               ))}
             </div>
- 
-            {/* Ripeti i piu' sbagliati */}
+
             {argSbagliati.length > 0 && (
               <div style={{ background:C.redLight, border:`1px solid ${C.redRule}`, borderRadius:4, padding:'20px 24px', marginBottom:28 }}>
                 <div style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:C.red, marginBottom:8 }}>
                   Argomenti da ripassare
                 </div>
                 <p style={{ fontSize:13, color:C.ink2, marginBottom:16, lineHeight:1.5 }}>
-                  Hai piu' del 30% di risposte insufficienti in questi argomenti:
-                  <strong> {argSbagliati.join(', ')}</strong>
+                  Hai piu' del 30% di risposte insufficienti in: <strong>{argSbagliati.join(', ')}</strong>
                 </p>
                 <Btn variant="red" onClick={() => onRetry(argSbagliati)}>
                   Ripassa i piu' sbagliati
                 </Btn>
               </div>
             )}
- 
-            {/* Per-argomento */}
+
             <Label>Dettaglio per argomento</Label>
             <div style={{ marginTop:12 }}>
               {argsConDati.map(a => {
@@ -306,7 +301,7 @@ function StatsScreen({ username, onBack, onRetry }) {
                       <span style={{ fontSize:13, fontWeight:600, color:C.ink }}>{a}</span>
                       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                         <span style={{ fontFamily:F.mono, fontSize:11, color:C.ink4 }}>{s.total} risposte</span>
-                        <span style={{ fontFamily:F.mono, fontSize:12, fontWeight:600, color:barColor }}>{pctOk}% corretto</span>
+                        <span style={{ fontFamily:F.mono, fontSize:12, fontWeight:600, color:barColor }}>{pctOk}%</span>
                         <button onClick={() => onRetry([a])} style={{
                           fontSize:10, fontFamily:F.mono, letterSpacing:'.06em', textTransform:'uppercase',
                           color:C.red, background:'none', border:`1px solid ${C.redRule}`, borderRadius:2,
@@ -319,7 +314,7 @@ function StatsScreen({ username, onBack, onRetry }) {
                     </div>
                     <div style={{ display:'flex', gap:16, marginTop:10 }}>
                       {['OTTIMO','BUONO','SUFFICIENTE','INSUFFICIENTE'].map(v => (
-                        <span key={v} style={{ fontFamily:F.mono, fontSize:10, color: s[v] > 0 ? VOTE[v].text : C.ink4 }}>
+                        <span key={v} style={{ fontFamily:F.mono, fontSize:10, color: (s[v]||0) > 0 ? VOTE[v].text : C.ink4 }}>
                           {VOTE[v].label}: {s[v]||0}
                         </span>
                       ))}
@@ -334,29 +329,36 @@ function StatsScreen({ username, onBack, onRetry }) {
     </div>
   );
 }
- 
+
 // --- SETUP -----------------------------------------------------------------
 function SetupScreen({ username, onStart, onLogout, onStats }) {
   const [mode, setMode] = useState('argomento');
   const [selectedArgs, setSelectedArgs] = useState([]);
   const [numQ, setNumQ] = useState(10);
   const [searchArg, setSearchArg] = useState('');
- 
+
   const toggleArg = a => setSelectedArgs(p => p.includes(a) ? p.filter(x=>x!==a) : [...p,a]);
-  const allSel = selectedArgs.length === argomenti.length;
- const argFiltered = argomenti.filter(a => a && a.toLowerCase().includes(searchArg.toLowerCase()));
-  const realPool = mode==='argomento' ? domande.filter(d=>selectedArgs.includes(d.argomento)) : domande;
+  const allSel = selectedArgs.length === argomentiPuliti.length;
+
+  // RICERCA DIFENSIVA: controlla che a sia stringa prima di chiamare toLowerCase
+  const argFiltered = argomentiPuliti.filter(a =>
+    typeof a === 'string' && a.toLowerCase().includes((searchArg||'').toLowerCase())
+  );
+
+  const realPool = mode==='argomento'
+    ? (domande||[]).filter(d => d && d.argomento && selectedArgs.includes(d.argomento))
+    : (domande||[]);
   const maxQ = realPool.length;
   const canStart = mode==='esame' || mode==='random' || (mode==='argomento' && selectedArgs.length>0);
   const nomeDisplay = cap(username);
- 
+
   const go = () => {
     let pool;
-    if (mode==='esame') pool = shuffle(domande).slice(0, EXAM_N);
+    if (mode==='esame') pool = shuffle(domande||[]).slice(0, EXAM_N);
     else pool = shuffle(realPool).slice(0, Math.min(numQ, maxQ));
-    onStart({ pool, isExam:mode==='esame', argomentiScelti:mode==='argomento'?selectedArgs:argomenti });
+    onStart({ pool, isExam:mode==='esame', argomentiScelti:mode==='argomento'?selectedArgs:argomentiPuliti });
   };
- 
+
   return (
     <div style={{ minHeight:'100vh', background:C.paper }}>
       <Masthead nome={nomeDisplay} onLogout={onLogout} extra={
@@ -366,7 +368,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
           padding:'4px 10px', cursor:'pointer',
         }}>Statistiche</button>
       }/>
- 
+
       <div style={{ maxWidth:760, margin:'0 auto', padding:'44px 24px' }}>
         <h2 style={{ fontFamily:F.serif, fontSize:28, fontWeight:700, color:C.ink, marginBottom:6, letterSpacing:'-.02em' }}>
           Buono studio, {nomeDisplay}.
@@ -374,7 +376,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
         <p style={{ fontSize:14, color:C.ink3, marginBottom:36, lineHeight:1.6 }}>
           Scegli modalita e argomenti, poi inizia la sessione.
         </p>
- 
+
         <Label>Modalita</Label>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:32 }}>
           {[
@@ -395,23 +397,22 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
             );
           })}
         </div>
- 
+
         {mode==='argomento' && (
           <>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
               <Label>Argomenti</Label>
-              <button onClick={()=>setSelectedArgs(allSel?[]:[...argomenti])} style={{
+              <button onClick={()=>setSelectedArgs(allSel?[]:[...argomentiPuliti])} style={{
                 fontSize:11, color:C.red, background:'none', border:'none', cursor:'pointer',
                 fontFamily:F.mono, letterSpacing:'.06em', textTransform:'uppercase',
               }}>{allSel?'Deseleziona tutti':'Seleziona tutti'}</button>
             </div>
- 
-            {/* RICERCA ARGOMENTI */}
+
             <input
               type="text"
               placeholder="Cerca argomento..."
               value={searchArg}
-              onChange={e => setSearchArg(e.target.value)}
+              onChange={e => setSearchArg(e.target.value || '')}
               style={{
                 width:'100%', padding:'9px 12px', marginBottom:10,
                 border:`1px solid ${C.rule}`, borderRadius:3,
@@ -421,7 +422,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
               onFocus={e=>e.target.style.borderColor=C.ink}
               onBlur={e=>e.target.style.borderColor=C.rule}
             />
- 
+
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:28, maxHeight:240, overflowY:'auto' }}>
               {argFiltered.map(a => {
                 const sel = selectedArgs.includes(a);
@@ -453,7 +454,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
             </div>
           </>
         )}
- 
+
         {mode!=='esame' && (
           <div style={{ marginBottom:28 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10 }}>
@@ -467,7 +468,7 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
             </div>
           </div>
         )}
- 
+
         <Rule my={0} />
         <div style={{ paddingTop:28 }}>
           <Btn onClick={go} disabled={!canStart} style={{ minWidth:200 }}>
@@ -478,10 +479,10 @@ function SetupScreen({ username, onStart, onLogout, onStats }) {
     </div>
   );
 }
- 
+
 // --- QUIZ ------------------------------------------------------------------
-function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd, onMenu }) {
-  const [pool] = useState(initialPool);
+function QuizScreen({ pool:initialPool, isExam, username, onEnd, onMenu }) {
+  const [pool] = useState(initialPool || []);
   const [current, setCurrent] = useState(0);
   const [risposta, setRisposta] = useState('');
   const [loading, setLoading] = useState(false);
@@ -490,12 +491,13 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
   const [showRef, setShowRef] = useState(false);
   const [results, setResults] = useState([]);
   const [done, setDone] = useState(false);
- 
+
   const q = pool[current];
   const pct = pool.length > 0 ? (current / pool.length) * 100 : 0;
   const nomeDisplay = cap(username);
- 
+
   const handleSubmit = async () => {
+    if (!q) return;
     setErr(''); setLoading(true); setFeedback(null);
     try {
       const fb = await correggi(q.domanda, risposta, q.risposta);
@@ -505,22 +507,23 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
     } catch(e) { setErr(e.message || 'Errore. Riprova.'); }
     finally { setLoading(false); }
   };
- 
+
   const advance = useCallback(() => {
     if (current + 1 >= pool.length) setDone(true);
     else { setCurrent(c=>c+1); setRisposta(''); setFeedback(null); setErr(''); setShowRef(false); }
   }, [current, pool.length]);
- 
+
   const handleSkip = () => {
+    if (!q) return;
     setResults(p => [...p, { q, risposta:'(saltata)', fb:{ voto:'INSUFFICIENTE', punteggio:0, feedback:'Domanda saltata.', concetti:[] } }]);
     addResult(username, q.argomento, 'INSUFFICIENTE');
     advance();
   };
- 
-  if (done) return <ResultsScreen results={results} pool={pool} isExam={isExam} username={username} onEnd={onEnd} onMenu={onMenu} />;
- 
+
+  if (done || !q) return <ResultsScreen results={results} pool={pool} isExam={isExam} username={username} onEnd={onEnd} onMenu={onMenu} />;
+
   const vv = feedback ? (VOTE[feedback.voto] || VOTE.SUFFICIENTE) : null;
- 
+
   return (
     <div style={{ minHeight:'100vh', background:C.paper }}>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box}`}</style>
@@ -533,40 +536,40 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
       <div style={{ height:2, background:C.rule }}>
         <div style={{ height:'100%', background:C.red, width:`${pct}%`, transition:'width .4s ease' }}/>
       </div>
- 
+
       <div style={{ maxWidth:720, margin:'0 auto', padding:'36px 24px' }}>
         <div style={{ background:C.white, border:`1px solid ${C.rule}`, borderRadius:4, padding:'30px 34px', marginBottom:16 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
-            <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:C.red }}>{q.argomento}</span>
+            <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.1em', textTransform:'uppercase', color:C.red }}>{q.argomento || ''}</span>
             <span style={{ fontFamily:F.mono, fontSize:9, color:C.ink4, marginLeft:'auto' }}>#{q.id}</span>
           </div>
- 
+
           <p style={{ fontFamily:F.serif, fontSize:20, fontWeight:600, lineHeight:1.5, color:C.ink, marginBottom:22, letterSpacing:'-.01em' }}>
-            {q.domanda}
+            {q.domanda || ''}
           </p>
- 
+
           {!showRef
             ? <button onClick={()=>setShowRef(true)} style={{ fontSize:11, fontFamily:F.mono, letterSpacing:'.06em', textTransform:'uppercase', color:C.ink4, background:'none', border:'none', cursor:'pointer', marginBottom:18, textDecoration:'underline' }}>
                 Mostra risposta di riferimento
               </button>
             : <div style={{ background:C.paper, border:`1px solid ${C.rule}`, borderLeft:`3px solid ${C.red}`, padding:'11px 15px', marginBottom:18, borderRadius:2 }}>
                 <div style={{ fontFamily:F.mono, fontSize:9, letterSpacing:'.1em', textTransform:'uppercase', color:C.ink4, marginBottom:5 }}>Risposta dispensa Piazza</div>
-                <p style={{ fontSize:13, color:C.ink2, lineHeight:1.65, margin:0 }}>{q.risposta}</p>
+                <p style={{ fontSize:13, color:C.ink2, lineHeight:1.65, margin:0 }}>{q.risposta || ''}</p>
               </div>
           }
- 
+
           <Label>La tua risposta</Label>
           <textarea value={risposta} onChange={e=>setRisposta(e.target.value)} disabled={!!feedback||loading}
             placeholder="Rispondi in max 2 righe..." rows={3}
             style={{ width:'100%', padding:'11px 13px', border:`1px solid ${C.rule}`, borderRadius:3, fontSize:15, fontFamily:F.sans, color:C.ink, background:feedback?C.paper:C.white, resize:'vertical', outline:'none', lineHeight:1.6 }}
-            onFocus={e=>!feedback&&(e.target.style.borderColor=C.ink)}
-            onBlur={e=>(e.target.style.borderColor=C.rule)}
+            onFocus={e=>{ if(!feedback) e.target.style.borderColor=C.ink; }}
+            onBlur={e=>{ e.target.style.borderColor=C.rule; }}
           />
           <div style={{ display:'flex', justifyContent:'space-between', marginTop:5 }}>
             <span style={{ fontFamily:F.mono, fontSize:10, color:C.ink4 }}>{risposta.length} car.</span>
           </div>
           {err && <p style={{ fontSize:12, color:C.red, marginTop:10, fontFamily:F.mono }}>{err}</p>}
- 
+
           {!feedback && (
             <div style={{ display:'flex', gap:10, marginTop:18 }}>
               <Btn onClick={handleSubmit} disabled={loading}>
@@ -576,7 +579,7 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
             </div>
           )}
         </div>
- 
+
         {feedback && vv && (
           <div style={{ background:vv.bg, border:`1px solid ${vv.rule}`, borderRadius:4, padding:'26px 30px', animation:'fadeUp .25s ease' }}>
             <div style={{ display:'flex', alignItems:'baseline', gap:14, marginBottom:14 }}>
@@ -587,7 +590,7 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
             <p style={{ fontSize:14, lineHeight:1.75, color:C.ink2, margin:'14px 0', paddingLeft:14, borderLeft:`2px solid ${vv.rule}` }}>
               {feedback.feedback}
             </p>
-            {feedback.concetti?.length > 0 && (
+            {(feedback.concetti||[]).length > 0 && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginBottom:18 }}>
                 {feedback.concetti.map((c,i) => (
                   <span key={i} style={{ fontFamily:F.mono, fontSize:11, color:vv.text, background:vv.bg, border:`1px solid ${vv.rule}`, borderRadius:2, padding:'3px 9px' }}>{c}</span>
@@ -604,22 +607,22 @@ function QuizScreen({ pool:initialPool, isExam, argomentiScelti, username, onEnd
     </div>
   );
 }
- 
+
 // --- RESULTS ---------------------------------------------------------------
 function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
   const [review, setReview] = useState(false);
   const nomeDisplay = cap(username);
- 
+
   const counts = { OTTIMO:0, BUONO:0, SUFFICIENTE:0, INSUFFICIENTE:0 };
   let totalScore = 0;
-  results.forEach(r => {
+  (results||[]).forEach(r => {
     if (r.fb?.voto) { counts[r.fb.voto]=(counts[r.fb.voto]||0)+1; totalScore+=VOTE[r.fb.voto]?.score||0; }
   });
-  const maxScore = pool.length * 4;
-  const pct = Math.round((totalScore/maxScore)*100);
+  const maxScore = (pool||[]).length * 4;
+  const pct = maxScore > 0 ? Math.round((totalScore/maxScore)*100) : 0;
   const examGrade = isExam ? Math.min(30, Math.max(18, Math.round(18+(pct/100)*12))) : null;
   const passed = examGrade >= 18;
- 
+
   return (
     <div style={{ minHeight:'100vh', background:C.paper }}>
       <Masthead nome={nomeDisplay} onMenu={onMenu} />
@@ -631,10 +634,10 @@ function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
           {isExam ? `${examGrade} / 30` : `${pct}% corretto`}
         </h2>
         <p style={{ fontSize:14, color:C.ink3, marginBottom:36 }}>
-          {pool.length} domande - {nomeDisplay}
+          {(pool||[]).length} domande - {nomeDisplay}
           {isExam && <span style={{ marginLeft:12, color:passed?C.green:C.red, fontWeight:600 }}>{passed?'- Sufficiente':'- Non sufficiente'}</span>}
         </p>
- 
+
         <Rule />
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:1, background:C.rule, border:`1px solid ${C.rule}`, marginBottom:36, marginTop:1 }}>
           {Object.entries(counts).map(([voto,n]) => {
@@ -647,22 +650,22 @@ function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
             );
           })}
         </div>
- 
+
         <div style={{ display:'flex', gap:12, marginBottom:44, flexWrap:'wrap' }}>
           <Btn onClick={onMenu}>Menu principale</Btn>
           <Btn variant="secondary" onClick={onEnd}>Nuova sessione</Btn>
           <Btn variant="ghost" onClick={()=>setReview(r=>!r)}>{review?'Chiudi revisione':'Rivedi le risposte'}</Btn>
         </div>
- 
-        {review && results.map((r,i) => {
+
+        {review && (results||[]).map((r,i) => {
           const vv = VOTE[r.fb?.voto]||VOTE.INSUFFICIENTE;
           return (
             <div key={i} style={{ background:C.white, border:`1px solid ${C.rule}`, borderRadius:3, padding:'22px 26px', marginBottom:10, animation:'fadeUp .2s ease' }}>
               <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:8 }}>
                 <span style={{ fontFamily:F.mono, fontSize:10, letterSpacing:'.08em', textTransform:'uppercase', color:vv.text }}>{vv.label} - {r.fb?.punteggio}/10</span>
-                <span style={{ fontFamily:F.mono, fontSize:10, color:C.ink4 }}>{r.q.argomento}</span>
+                <span style={{ fontFamily:F.mono, fontSize:10, color:C.ink4 }}>{r.q?.argomento||''}</span>
               </div>
-              <p style={{ fontFamily:F.serif, fontSize:15, fontWeight:600, color:C.ink, marginBottom:10, lineHeight:1.4 }}>{r.q.domanda}</p>
+              <p style={{ fontFamily:F.serif, fontSize:15, fontWeight:600, color:C.ink, marginBottom:10, lineHeight:1.4 }}>{r.q?.domanda||''}</p>
               <div style={{ fontSize:13, color:C.ink3, background:C.paper, border:`1px solid ${C.rule}`, borderRadius:2, padding:'7px 11px', marginBottom:8 }}>
                 <span style={{ fontFamily:F.mono, fontSize:9, textTransform:'uppercase', letterSpacing:'.08em', color:C.ink4 }}>Tua risposta: </span>{r.risposta}
               </div>
@@ -676,7 +679,7 @@ function ResultsScreen({ results, pool, isExam, username, onEnd, onMenu }) {
     </div>
   );
 }
- 
+
 // --- ROOT ------------------------------------------------------------------
 export default function App() {
   const [username, setUsername] = useState(() => {
@@ -684,19 +687,17 @@ export default function App() {
   });
   const [screen, setScreen] = useState('setup');
   const [session, setSession] = useState(null);
- 
+
   const handleLogin  = u => { saveSession({ username:u }); setUsername(u); };
   const handleLogout = () => { clearSession(); setUsername(null); setSession(null); setScreen('setup'); };
   const handleStart  = s => { setSession(s); setScreen('quiz'); };
   const handleMenu   = () => { setSession(null); setScreen('setup'); };
- 
-  // Ripassa gli argomenti sbagliati: prende le domande di quegli argomenti e avvia il quiz
-  const handleRetry  = (argssbagliati) => {
-    const pool = shuffle(domande.filter(d => argssbagliati.includes(d.argomento))).slice(0, 20);
-    setSession({ pool, isExam:false, argomentiScelti:argssbagliati });
+  const handleRetry  = (argsSbagliati) => {
+    const pool = shuffle((domande||[]).filter(d => d && d.argomento && argsSbagliati.includes(d.argomento))).slice(0, 20);
+    setSession({ pool, isExam:false, argomentiScelti:argsSbagliati });
     setScreen('quiz');
   };
- 
+
   if (!username) return <LoginScreen onLogin={handleLogin} />;
   if (screen==='stats') return <StatsScreen username={username} onBack={()=>setScreen('setup')} onRetry={handleRetry} />;
   if (screen==='quiz' && session) return (
@@ -704,4 +705,3 @@ export default function App() {
   );
   return <SetupScreen username={username} onStart={handleStart} onLogout={handleLogout} onStats={()=>setScreen('stats')} />;
 }
- 
