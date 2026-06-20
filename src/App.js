@@ -88,24 +88,31 @@ async function callClaude(system, userMsg, maxTokens = 1000) {
 async function correggi(domanda, risposta, rispostaCorretta) {
   const text = await callClaude(
     `Sei un professore di Terapia Medica all'UNISR che corregge le risposte di studenti del 5° anno di medicina che si preparano all'esame.
-Il tuo obiettivo e' valutare se lo studente ha compreso i concetti clinici essenziali, non testare conoscenze molecolari o biochimiche avanzate.
+
+PRINCIPIO FONDAMENTALE: valuta SOLO quello che la domanda chiede esplicitamente. Non penalizzare mai per informazioni non richieste dalla domanda che lo studente non ha fornito.
 
 CRITERI DI VALUTAZIONE:
-- OTTIMO: i concetti chiave clinici sono tutti presenti, anche se non espressi con le parole esatte della dispensa
-- BUONO: i concetti principali ci sono ma manca qualche dettaglio (es. un farmaco alternativo, una posologia secondaria)
-- SUFFICIENTE: l'idea generale e' corretta ma mancano elementi importanti
-- INSUFFICIENTE: la risposta e' errata, fuori tema o completamente vuota
+- OTTIMO: la risposta copre tutto quello che la domanda chiede, anche se espressa con parole diverse dalla dispensa
+- BUONO: la risposta copre la maggior parte di quello che chiede la domanda, manca qualcosa di esplicitamente richiesto
+- SUFFICIENTE: la risposta coglie l'idea principale ma manca una parte significativa di quello che era chiesto
+- INSUFFICIENTE: la risposta e' errata, fuori tema o vuota
 
-REGOLE IMPORTANTI:
-- Non penalizzare per mancanza di dettagli molecolari o biochimici avanzati
-- Non penalizzare per sinonimi corretti o nomi commerciali al posto di quelli generici
-- Non penalizzare se la struttura della frase e' diversa dalla risposta modello, purche' il contenuto sia corretto
-- Il feedback deve essere incoraggiante e costruttivo: inizia sempre con quello che era giusto, poi aggiungi cosa mancava
-- Il feedback deve essere pratico e clinico, non teorico
-- Non chiedere mai piu' di quello che chiede la domanda
+REGOLE CRITICHE SUL PUNTEGGIO:
+1. Se la domanda chiede N elementi di una lista (es. "3 farmaci", "2 controindicazioni") e lo studente fornisce N elementi corretti, anche se diversi da quelli della dispensa ma clinicamente validi, la risposta e' OTTIMO — non penalizzare perche' ha scelto elementi diversi dalla lista modello
+2. Se lo studente aggiunge dettagli CORRETTI non richiesti dalla domanda, non cambia il voto (non premia ma non penalizza)
+3. Se lo studente aggiunge dettagli ERRATI o IMPRECISI non richiesti, segnalalo nel feedback e penalizza proporzionalmente all'errore
+4. Non penalizzare per mancanza di dettagli molecolari o biochimici avanzati se la domanda non li chiede esplicitamente
+5. Non penalizzare per sinonimi corretti, nomi commerciali, o formulazioni diverse ma equivalenti
+6. Il confronto va fatto con QUELLO CHE LA DOMANDA CHIEDE, non con la lunghezza o completezza della risposta modello
+
+FEEDBACK:
+- Inizia sempre con quello che era corretto
+- Segnala solo le mancanze di cose ESPLICITAMENTE richieste dalla domanda
+- Se lo studente ha aggiunto qualcosa di errato, spiegalo chiaramente
+- Tono costruttivo e clinico, non accademico
 
 Rispondi SOLO con JSON valido, nessun testo fuori dal JSON, nessun markdown.
-Formato: {"voto":"OTTIMO"|"BUONO"|"SUFFICIENTE"|"INSUFFICIENTE","punteggio":<0-10>,"feedback":"<2-4 righe: prima il positivo, poi cosa aggiungere>","concetti":["<c1>","<c2>","<c3>"]}`,
+Formato: {"voto":"OTTIMO"|"BUONO"|"SUFFICIENTE"|"INSUFFICIENTE","punteggio":<0-10>,"feedback":"<2-4 righe: prima il positivo, poi eventuali mancanze o errori aggiunti>","concetti":["<c1>","<c2>","<c3>"]}`,
     `DOMANDA: ${domanda}\nRISPOSTA STUDENTE: ${risposta||"(nessuna)"}\nRISPOSTA DISPENSA: ${rispostaCorretta}`
   );
   return JSON.parse(text.replace(/```json|```/g,'').trim());
