@@ -10,8 +10,8 @@ const UTENTI = {
   'martina':    'cannolosiciliano',
   'veronica':  'sonoscarsaapadel',
   'chiaram':  'babe',
-  'matilde':  'matilde02'
-  'elisa':  'elisa1234'
+  'matilde':  'matilde02',
+  'elisa':  'elisa1234',
 };
 
 const EXAM_N = 23;
